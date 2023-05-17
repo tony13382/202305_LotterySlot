@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+    <!--<![endif]--><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>抽獎系統</title>
+
+    <link href="assets/css/style.css" media="all" rel="stylesheet" type="text/css">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Don't use this in production: -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<body style="padding: 0px;">
+    
+    <div class="wrapper">
+        <div class="container" style="margin: 20px 0px;"> <!-- Only required for left/right tabs -->
+            <style>
+                .nav li{
+                    border: 0px;
+                    padding: 0.25rem;
+                }
+                .nav li a{
+                    color: white;
+                }
+                .nav .active a{
+                    border: 0px;
+                    background-color: rgb(78,78,78);
+                    border-radius: 999px;
+                    color: white;
+                }
+                .nav .active a:hover ,
+                .nav li a:hover{
+                    border: 0px;
+                    background-color: rgb(53,53,53);
+                    border-radius: 999px;
+                    color: white;
+                }
+            </style>
+            <ul class="nav nav-tabs" style="border: 0px;">
+                <li class="active"><a href="#tab1" data-toggle="tab">匯入資料</a></li>
+                <li><a href="#tab2" data-toggle="tab">抽獎畫面</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="tab1">
+                    <div class="row" style="display: flex; align-items: stretch;">
+                        <div style="width:100%; padding:0px 20px; display: grid;">
+                            <div style="background-color: white; padding: 1rem; border-radius: 20px; 
+                                        box-shadow: rgba(236, 236, 244, 0.2) 0px 7px 29px 0px;">
+                                <p><strong>設定清單</strong></p>
+                                <div style="width: 100%; display: flex;">
+                                    <textarea id="itemInput" rows="10" style="width:100%"></textarea>
+                                </div>
+                                <div style="display: grid;">
+                                    <button class="v5-btn" onclick="setDataFormText()">清除資料並更新清單</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width:50%; padding:0px 20px; display: grid;">
+                            <div style="background-color: white; padding: 1rem; border-radius: 20px; 
+                                        box-shadow: rgba(236, 236, 244, 0.2) 0px 7px 29px 0px;">
+                                <p><strong>中獎清單</strong></p>
+                                <hr style="margin: 2px 0px;">
+                                <style>
+                                    .v5-btn{
+                                        color: #fff;
+                                        background-color: #031022;
+                                        border-color: #020b1a;
+                                        display: inline-block;
+                                        font-weight: 400;
+                                        line-height: 1.5;
+                                        border: 1px solid transparent;
+                                        padding: 0.375rem 0.75rem;
+                                        font-size: 1rem;
+                                        border-radius: 0.25rem;
+                                        transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+                                        border-radius: 999px;
+                                    }
+                                </style>
+                                <div style="width: 100%; display: grid; gap: 10px;margin-top: 8px;" class="history_area" id="history_area">
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width:50%; padding:0px 20px; display: grid;">
+                            <div style="background-color: white; padding: 1rem; border-radius: 20px; 
+                                        box-shadow: rgba(236, 236, 244, 0.2) 0px 7px 29px 0px;">
+                                <p><strong>可被抽取清單</strong></p>
+                                <hr style="margin: 2px 0px;">
+                                <div style="width: 100%; display: grid; gap: 10px;margin-top: 8px;" class="extractItem_area" id="extractItem_area">
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+                <div class="tab-pane" id="tab2">
+                    <p><div class="container machine">
+                        <div class="slot-machine column-1 clearfix">
+                            <div class="bd clearfix">
+                                <div class="col">
+                                    <div class="content text" id="content-464420" style="overflow: hidden; text-align: center;">
+                                        <div class="machine-shadow"></div>
+                                        <ul id="items" class="items">
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <div class="controller">
+                                <div class="bar-groove">
+                                    <a class="handle" id="handle" onclick="extractItem()"></a>
+                                </div>
+                                <a class="sound sound-on" id="sound-btn" onclick="changeSoundMode()"></a>
+                            </div>
+                        </div>
+            
+                        <audio id="machine-rolling">
+                            <source src="./assets/sound/sound-machine-rolling.ogg">
+                            <source src="./assets/sound/sound-machine-rolling.mp3">
+                        </audio>
+                        <audio id="machine-handle">
+                            <source src="./assets/sound/sound-machine-handle.ogg">
+                            <source src="./assets/sound/sound-machine-handle.mp3">
+                        </audio>
+                        <audio id="machine-rolled">
+                            <source src="./assets/sound/sound-machine-rolled.ogg">
+                            <source src="./assets/sound/sound-machine-rolled.mp3">
+                        </audio>
+                    </div></p>
+                </div>
+            </div>
+        </div>
+          
+        
+    </div>
+    <script>
+        // Change the sound of website
+        function changeSoundMode(){
+            let classList = document.getElementById("sound-btn").classList;
+            let soundDomList = [document.getElementById("machine-rolling"),document.getElementById("machine-handle"),document.getElementById("machine-rolled")];
+            let soundMode = null;
+            if(classList.contains("sound-on")){
+                // set sound to off
+                classList.replace("sound-on","sound-off");
+                soundMode = false;
+            }
+            else{
+                // set sound to on
+                classList.replace("sound-off","sound-on");
+                soundMode = true;
+            }
+            for(let i = 0; i<soundDomList.length; i++){
+                soundDomList[i].muted = soundMode;
+            }
+        }
+    </script>
+    <script>
+        function pullBarAnimate(){
+            document.getElementById("handle").classList.add("run");
+            setTimeout(function(){
+                document.getElementById("handle").classList.remove("run");
+            }, 1000);
+        }
+
+    </script>
+    <script>
+        var itemsList = [];
+        var items_to_extract = [];
+        var history_list = [];
+
+        function setUpData(){
+            items_to_extract = [];
+            history_list = [];
+            for(let i =0 ; i < itemsList.length ; i++){
+                items_to_extract.push({
+                    "index" : i,
+                    "item" : itemsList[i]
+                });
+            }
+            reflashItemsList();
+            reflashHistoryList();
+            reflashExtractList();
+        }
+        function setDataFormText(){
+            const inputDom = document.getElementById("itemInput");
+            const domValue = inputDom.value;
+            itemsList = domValue.split('\n');
+            setUpData();
+        }
+
+        function extractItem(){
+            const machineRolledSound = document.getElementById("machine-rolled");
+            const machineRollingSound = document.getElementById("machine-rolling");
+            const machineHandleSound = document.getElementById("machine-handle");
+
+            if(items_to_extract.length > 0){
+                machineHandleSound.play();
+                animateMarginTop(
+                    document.getElementById("items"), // 替换为你的元素ID
+                    0, // 替换为你的目标marginTop值
+                    10 // 动画持续时间（以毫秒为单位）
+                );
+                pullBarAnimate();
+                let randomIndex = Math.floor(Math.random()*items_to_extract.length);
+                let settingMarginTopValue = -248 * (items_to_extract[randomIndex]["index"]);
+                console.log(randomIndex,"|",settingMarginTopValue,"|",items_to_extract[randomIndex]);
+                setTimeout(function(){
+                    machineRollingSound.play();
+                    animateMarginTop(
+                    document.getElementById("items"), // 替换为你的元素ID
+                        (-248 * 2 * itemsList.length) + settingMarginTopValue, // 替换为你的目标marginTop值
+                        2500 // 动画持续时间（以毫秒为单位）
+                    );
+                }, 50);
+                machineRollingSound.pause();
+                machineRolledSound.play();
+                history_list.push(items_to_extract[randomIndex]);
+                items_to_extract.splice(randomIndex,1);
+                reflashHistoryList();
+                reflashExtractList();
+                
+            }
+            else{
+                console.log("no body can get.")
+            }
+        }
+
+        /*
+        function releaseHistonyItem( index ){
+            items_to_extract.push(history_list[index]);
+            history_list.splice(index,1);
+        }
+        */
+        
+        function animateMarginTop(element, targetMarginTop, duration) {
+            let startMarginTop = parseInt(element.style.marginTop) || 0; // 获取起始marginTop的值
+            let distance = targetMarginTop - startMarginTop; // 计算marginTop的距离
+            let startTime = null;
+
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
+                let progress = elapsed / duration; // 计算动画的进度（0到1之间的值）
+                progress = Math.min(progress, 1); // 确保进度不超过1
+
+                let newMarginTop = startMarginTop + distance * progress; // 计算新的marginTop值
+                element.style.marginTop = newMarginTop + 'px'; // 更新元素的marginTop属性
+
+                if (progress < 1) {
+                // 动画未完成，继续执行下一帧
+                requestAnimationFrame(step);
+                }
+            }
+            // 启动动画
+            requestAnimationFrame(step);
+        }
+    </script>
+
+    <script type="text/babel">    
+        
+        function ItemList() {
+            const getItemList = itemsList;
+            if(getItemList.length == 0){
+                return <li> 請輸入名單</li>
+            }
+            else{
+                return (
+                    Array.from({ length: 3 }, (_, index) => (
+                        getItemList.map((item, itemIndex) => (
+                            <li key={itemIndex}>{item}</li>
+                        ))
+                    ))
+                );
+            }
+        }
+
+        var itemsDom = ReactDOM.createRoot(document.getElementById('items')); 
+        function reflashItemsList(){
+            itemsDom.render( <ItemList items={itemsList} />);
+        }
+
+        function HistoryItem() {
+            const data = history_list;
+            return (
+                
+                data.map((item, index) => (
+                    <div  key={item.index} style={{ display: 'flex', alignSelf: 'center' }}>
+                        <p style={{ flex: '1 0 0%', margin: '0px' }}>{item.item}</p>
+                        {/*<button className="v5-btn" style={{ flex: '0 0 auto', width: 'auto' }}>return</button>*/}
+                    </div>
+                ))
+            );
+        }
+
+        var historyDom = ReactDOM.createRoot(document.getElementById('history_area')); 
+        function reflashHistoryList(){
+            historyDom.render( <HistoryItem items={itemsList} />);
+        }
+
+        function ExtractItem() {
+            const data = items_to_extract;
+            return (    
+                data.map((item, index) => (
+                    <div  key={item.index} style={{ display: 'flex', alignSelf: 'center' }}>
+                        <p style={{ flex: '1 0 0%', margin: '0px' }}>{item.item}</p>
+                        {/*<button className="v5-btn" style={{ flex: '0 0 auto', width: 'auto' }}>return</button>*/}
+                    </div>
+                ))
+            );
+        }
+        
+        var extractItemDom = ReactDOM.createRoot(document.getElementById('extractItem_area')); 
+        function reflashExtractList(){
+            extractItemDom.render( <ExtractItem items={items_to_extract} />);
+        }
+
+        setUpData();
+    </script>
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="./assets/js/bootstrap.min.js"></script>
+</body>
